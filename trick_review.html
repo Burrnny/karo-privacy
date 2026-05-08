@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klaro · Review de preguntas trampa</title>
+<style>
+:root {
+  --bg: #fafafa;
+  --card: #fff;
+  --border: #e5e5e8;
+  --primary: #5b4ed8;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  padding: 24px 16px 80px;
+}
+.container { max-width: 760px; margin: 0 auto; }
+.header { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; position: sticky; top: 12px; z-index: 10; box-shadow: 0 4px 14px rgba(0,0,0,0.04); }
+.header h1 { font-size: 22px; margin-bottom: 4px; }
+.header p { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat { background: #f5f5f7; padding: 10px 12px; border-radius: 8px; text-align: center; }
+.stat-num { font-size: 24px; font-weight: 600; }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat.approved .stat-num { color: var(--green); }
+.stat.fix .stat-num { color: var(--yellow); }
+.stat.reject .stat-num { color: var(--red); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: #4a3fc4; }
+.btn-secondary { background: #e5e5e8; color: var(--text); }
+.btn-secondary:hover { background: #d5d5d8; }
+
+.q { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; transition: background 0.2s; }
+.q.approved { background: #f0fdf4; border-color: #bbf7d0; }
+.q.fix { background: #fffbeb; border-color: #fde68a; }
+.q.reject { background: #fef2f2; border-color: #fecaca; }
+.q-meta { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.tag { background: #f0f0f3; color: var(--muted); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.tag.id { background: #ede9fe; color: var(--primary); font-family: ui-monospace, monospace; }
+.tag.cat { background: #dbeafe; color: #1e40af; }
+.tag.diff-4 { background: #fef3c7; color: #92400e; }
+.tag.diff-5 { background: #fee2e2; color: #991b1b; }
+.q h3 { font-size: 16px; margin-bottom: 12px; line-height: 1.45; }
+.options { list-style: none; margin-bottom: 12px; }
+.options li { padding: 7px 12px; background: #f5f5f7; border-radius: 6px; margin-bottom: 4px; font-size: 14px; }
+.options li.correct { background: #dcfce7; font-weight: 500; }
+.options li.correct::before { content: "✓ "; color: var(--green); font-weight: bold; }
+.q-explanation { background: #f5f5f7; padding: 10px 12px; border-radius: 6px; margin-bottom: 14px; font-size: 13px; color: var(--muted); border-left: 3px solid var(--primary); }
+.q-explanation strong { color: var(--text); }
+.review-controls { display: grid; gap: 8px; }
+.review-controls label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.review-controls select, .review-controls input, .review-controls textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit;
+  background: white;
+}
+.review-controls select { font-weight: 500; }
+.review-controls textarea { min-height: 50px; resize: vertical; }
+.row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 600px) { .row { grid-template-columns: 200px 1fr; align-items: start; } }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity 0.3s; }
+.toast.show { opacity: 1; }
+.footer-cta { text-align: center; margin-top: 24px; padding: 24px; background: white; border-radius: 12px; border: 1px solid var(--border); }
+.footer-cta p { color: var(--muted); margin-bottom: 16px; }
+@media (max-width: 600px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .header { position: relative; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧠 Klaro · Review de preguntas trampa</h1>
+    <p>Revisa cada pregunta y marca su status. Tu progreso se guarda automáticamente. Al terminar, descarga tu review como CSV.</p>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="total">0</div><div class="stat-label">Total</div></div>
+      <div class="stat approved"><div class="stat-num" id="cnt-approved">0</div><div class="stat-label">Aprobadas</div></div>
+      <div class="stat fix"><div class="stat-num" id="cnt-fix">0</div><div class="stat-label">A corregir</div></div>
+      <div class="stat reject"><div class="stat-num" id="cnt-reject">0</div><div class="stat-label">Rechazadas</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="downloadCSV()">⬇ Descargar CSV de mi review</button>
+      <button class="btn btn-secondary" onclick="if(confirm('¿Borrar todo el progreso del review?')) { localStorage.clear(); location.reload(); }">🗑 Borrar progreso</button>
+    </div>
+  </div>
+
+  <div id="questions"></div>
+
+  <div class="footer-cta">
+    <p>¡Llegaste al final! Click "Descargar CSV" arriba para enviarle a Juan tus resultados.</p>
+    <button class="btn btn-primary" onclick="downloadCSV()">⬇ Descargar CSV de mi review</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Guardado</div>
+
+<script>
+const QUESTIONS = [{"id": "common_sense_480", "module": "common_sense", "difficulty": 4, "rating": 1520, "question": "La madre de Ana tiene tres hijas: Eni, Ene, Eno. ¿Cómo se llama la cuarta?", "options": ["Enu", "Ena", "Ani", "Ana"], "correct": 3, "explanation": "Es la madre de Ana, así que Ana es una de las hijas.", "category": "auto-referencia"}, {"id": "common_sense_481", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "Si tienes 12 manzanas y te quitan 5, ¿cuántas tienes?", "options": ["7", "17", "12", "5"], "correct": 3, "explanation": "Las que te quitaron son las que tienes ahora.", "category": "re-lectura"}, {"id": "common_sense_482", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "¿Qué pesa más: un kilo de algodón mojado o un kilo de algodón seco?", "options": ["El mojado", "El seco", "Pesan igual", "Depende del clima"], "correct": 0, "explanation": "Mojado pesa más; un kilo seco más agua ya no es un kilo.", "category": "asunción oculta"}, {"id": "common_sense_483", "module": "common_sense", "difficulty": 5, "rating": 1780, "question": "Un avión sale de Madrid a las 10:00 y otro de Barcelona a las 10:30. Cuando se cruzan, ¿cuál está más cerca de Madrid?", "options": ["El de Madrid", "El de Barcelona", "Están a la misma distancia", "No se puede saber"], "correct": 2, "explanation": "Al cruzarse están en el mismo punto, misma distancia de todo.", "category": "asunción oculta"}, {"id": "common_sense_484", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "¿Cuántos meses tienen 28 días?", "options": ["1", "2", "12", "Ninguno"], "correct": 2, "explanation": "Todos los meses tienen al menos 28 días.", "category": "tiempo/calendario"}, {"id": "common_sense_485", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "Si en una carrera adelantas al segundo, ¿en qué posición quedas?", "options": ["Primero", "Segundo", "Tercero", "No se sabe"], "correct": 1, "explanation": "Tomas su lugar, no el del primero.", "category": "posición/orden"}, {"id": "common_sense_486", "module": "common_sense", "difficulty": 5, "rating": 1720, "question": "¿Cuántas letras tiene la palabra que es la respuesta correcta a esta pregunta?", "options": ["Cinco", "Seis", "Cuatro", "Tres"], "correct": 0, "explanation": "La palabra cinco tiene cinco letras: única auto-consistente.", "category": "auto-referencia"}, {"id": "common_sense_487", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "Un granjero tiene 17 ovejas y todas menos 9 mueren. ¿Cuántas le quedan?", "options": ["8", "9", "17", "0"], "correct": 1, "explanation": "Todas menos nueve significa que nueve sobreviven.", "category": "re-lectura"}, {"id": "common_sense_488", "module": "common_sense", "difficulty": 4, "rating": 1520, "question": "¿Qué día sigue al jueves?", "options": ["Viernes", "Sábado", "Domingo", "Cualquier día"], "correct": 0, "explanation": "Después del jueves siempre viene viernes.", "category": "tiempo/calendario"}, {"id": "common_sense_489", "module": "common_sense", "difficulty": 5, "rating": 1750, "question": "Antier cumplí 17 años y el próximo año cumpliré 20. ¿Cuándo es mi cumpleaños?", "options": ["31 de diciembre", "1 de enero", "29 de febrero", "Imposible"], "correct": 0, "explanation": "Hablo el 1 de enero; cumplí 18 ayer, 19 este año, 20 el siguiente.", "category": "tiempo/calendario"}, {"id": "common_sense_490", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "Dos padres y dos hijos comen tres manzanas, una cada uno. ¿Cómo es posible?", "options": ["Compartieron", "Eran tres: abuelo, padre, hijo", "Mienten", "Una era pequeña"], "correct": 1, "explanation": "Son abuelo, padre e hijo: el padre es padre e hijo.", "category": "familia"}, {"id": "common_sense_491", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "¿Cuál es más larga: una hora o sesenta minutos?", "options": ["La hora", "Los minutos", "Iguales", "Depende"], "correct": 2, "explanation": "Son exactamente lo mismo.", "category": "re-lectura"}, {"id": "common_sense_492", "module": "common_sense", "difficulty": 5, "rating": 1800, "question": "Si una gallina y media pone un huevo y medio en un día y medio, ¿cuántos huevos pone una gallina en seis días?", "options": ["Seis", "Cuatro", "Tres", "Nueve"], "correct": 1, "explanation": "Una gallina pone un huevo en día y medio: 6÷1.5=4.", "category": "tasa/proporción"}, {"id": "common_sense_493", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "¿Qué palabra del diccionario se escribe siempre mal?", "options": ["Difícil", "Mal", "Erróneo", "Equivocado"], "correct": 1, "explanation": "La palabra mal se escribe m-a-l, es decir, mal.", "category": "auto-referencia"}, {"id": "common_sense_494", "module": "common_sense", "difficulty": 4, "rating": 1620, "question": "¿Cuántos cumpleaños tiene el ser humano promedio?", "options": ["80", "Uno", "Depende de la edad", "Cero"], "correct": 1, "explanation": "Sólo nace una vez; el resto son aniversarios.", "category": "re-lectura"}, {"id": "common_sense_495", "module": "common_sense", "difficulty": 5, "rating": 1740, "question": "Un reloj da las 6 en seis segundos. ¿Cuánto tarda en dar las 12?", "options": ["12 segundos", "11 segundos", "13.2 segundos", "6 segundos"], "correct": 2, "explanation": "Cinco intervalos en 6s = 1.2s cada uno; 11 intervalos = 13.2s.", "category": "matemática trampa"}, {"id": "common_sense_496", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "Si Pedro nació antes que Pablo y Pablo antes que Juan, ¿quién es el menor?", "options": ["Pedro", "Pablo", "Juan", "No se sabe"], "correct": 2, "explanation": "Nacer antes significa ser mayor; Juan nació al final.", "category": "re-lectura"}, {"id": "common_sense_497", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "¿Cuál es el siguiente número: 1, 2, 3, 5, 8, 13, ...?", "options": ["18", "21", "20", "16"], "correct": 1, "explanation": "Fibonacci: cada uno es la suma de los dos anteriores.", "category": "patrón interrumpido"}, {"id": "common_sense_498", "module": "common_sense", "difficulty": 5, "rating": 1720, "question": "En un estanque hay un nenúfar que duplica su tamaño cada día. Cubre todo en 30 días. ¿En qué día cubre la mitad?", "options": ["15", "29", "30", "20"], "correct": 1, "explanation": "Si duplica diario, el día previo a llenarlo cubre la mitad.", "category": "tasa/proporción"}, {"id": "common_sense_499", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "María tiene cuatro hermanos. Cada hermano tiene una hermana. ¿Cuántos hijos tienen los padres en total?", "options": ["8", "5", "4", "9"], "correct": 1, "explanation": "María es la única hermana de los cuatro; cinco hijos.", "category": "familia"}, {"id": "common_sense_500", "module": "common_sense", "difficulty": 4, "rating": 1620, "question": "¿Cuántas veces puedes restar 5 de 25?", "options": ["5", "Una", "4", "Infinitas"], "correct": 1, "explanation": "Tras la primera resta ya no es 25, es 20.", "category": "re-lectura"}, {"id": "common_sense_501", "module": "common_sense", "difficulty": 5, "rating": 1760, "question": "Un caracol sube tres metros de día y baja dos de noche. El pozo mide 10 metros. ¿En qué día sale?", "options": ["10", "8", "9", "7"], "correct": 1, "explanation": "El día 8 sube 3m desde 7m y sale antes de bajar.", "category": "lateral situacional"}, {"id": "common_sense_502", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "Si tiras un dado y sale 6, ¿cuál es la probabilidad de que el siguiente tiro también sea 6?", "options": ["1/36", "1/6", "1/12", "Menor"], "correct": 1, "explanation": "Cada tiro es independiente; siempre 1/6.", "category": "matemática trampa"}, {"id": "common_sense_503", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "¿Qué se moja mientras seca?", "options": ["Una esponja", "Una toalla", "El sol", "Un trapo"], "correct": 1, "explanation": "La toalla se moja al secarte.", "category": "lateral situacional"}, {"id": "common_sense_504", "module": "common_sense", "difficulty": 5, "rating": 1780, "question": "¿Cuál es la mitad de dos más dos?", "options": ["Dos", "Tres", "Uno", "Cuatro"], "correct": 1, "explanation": "Mitad de dos es 1, más 2 es 3 (sin paréntesis implícitos).", "category": "matemática trampa"}, {"id": "common_sense_505", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "Un padre y un hijo tienen juntos 36 años. El padre tiene 30 más que el hijo. ¿Qué edad tiene el hijo?", "options": ["6", "3", "5", "9"], "correct": 1, "explanation": "Hijo 3, padre 33; suman 36 y diferencia 30.", "category": "matemática trampa"}, {"id": "common_sense_506", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "¿Cuántos animales subió Moisés al arca?", "options": ["Dos de cada", "Siete pares", "Ninguno, fue Noé", "No se sabe"], "correct": 2, "explanation": "Fue Noé, no Moisés, quien construyó el arca.", "category": "asunción oculta"}, {"id": "common_sense_508", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "Si vuelas con cuatro pasajeros y te quedas sin combustible, pero todos sobreviven, ¿cómo?", "options": ["Aterrizas en agua", "Están en tierra", "Hay paracaídas", "Es un avión a vela"], "correct": 1, "explanation": "El avión nunca despegó; vuelan en sentido figurado o simulador.", "category": "asunción oculta"}, {"id": "common_sense_509", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "¿Cuál es el resultado de sumar todos los números del 1 al 10?", "options": ["50", "55", "45", "60"], "correct": 1, "explanation": "Suma de Gauss: n(n+1)/2 = 55.", "category": "matemática trampa"}, {"id": "common_sense_510", "module": "common_sense", "difficulty": 5, "rating": 1750, "question": "Un libro cuesta 10 euros más la mitad de su precio. ¿Cuánto cuesta?", "options": ["15", "20", "10", "30"], "correct": 1, "explanation": "P = 10 + P/2; P/2 = 10; P = 20.", "category": "matemática trampa"}, {"id": "common_sense_511", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "En un cuarto oscuro hay una vela, una lámpara de aceite y una chimenea. Sólo tienes un cerillo. ¿Qué enciendes primero?", "options": ["La vela", "El cerillo", "La lámpara", "La chimenea"], "correct": 1, "explanation": "Sin encender el cerillo no puedes encender nada más.", "category": "lateral situacional"}, {"id": "common_sense_512", "module": "common_sense", "difficulty": 4, "rating": 1520, "question": "Un tren eléctrico viaja al norte a 80 km/h con viento del oeste. ¿Hacia dónde va el humo?", "options": ["Al este", "Al sur", "No hay humo", "Al norte"], "correct": 2, "explanation": "Los trenes eléctricos no producen humo.", "category": "asunción oculta"}, {"id": "common_sense_513", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "Si dos es compañía y tres multitud, ¿qué son cuatro y cinco?", "options": ["Una fiesta", "Mucha gente", "Nueve", "Familia"], "correct": 2, "explanation": "Cuatro más cinco es nueve; trampa lingüística.", "category": "re-lectura"}, {"id": "common_sense_514", "module": "common_sense", "difficulty": 5, "rating": 1740, "question": "¿Cuántos cuadrados hay en un tablero de ajedrez completo?", "options": ["64", "100", "204", "128"], "correct": 2, "explanation": "Suma de cuadrados perfectos del 1² al 8²: 204.", "category": "conteo trampa"}, {"id": "common_sense_515", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "¿Qué edad tiene una persona nacida en 1990 si hoy es el día anterior a su cumpleaños en 2025?", "options": ["35", "34", "36", "Depende del mes"], "correct": 1, "explanation": "Aún no cumple, así que tiene 34.", "category": "tiempo/calendario"}, {"id": "common_sense_516", "module": "common_sense", "difficulty": 4, "rating": 1620, "question": "¿En qué dirección sale el sol en el polo norte?", "options": ["Este", "Norte", "No sale 6 meses", "Sur"], "correct": 2, "explanation": "En el polo norte el sol no sale durante medio año.", "category": "asunción oculta"}, {"id": "common_sense_520", "module": "common_sense", "difficulty": 5, "rating": 1750, "question": "Si tres gatos cazan tres ratones en tres minutos, ¿cuántos gatos hacen falta para cazar 100 ratones en 100 minutos?", "options": ["100", "33", "3", "10"], "correct": 2, "explanation": "Cada gato caza 1 ratón cada 3 minutos; 3 gatos cazan 100 en 100min.", "category": "tasa/proporción"}, {"id": "common_sense_522", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "Cuento del 1 al 10 saltando los pares. ¿Cuántos números digo?", "options": ["5", "4", "6", "10"], "correct": 0, "explanation": "1, 3, 5, 7, 9: cinco números impares.", "category": "conteo trampa"}, {"id": "common_sense_523", "module": "common_sense", "difficulty": 5, "rating": 1730, "question": "Tengo dos monedas que suman 30 céntimos y una de ellas no es de 20. ¿Cuáles son?", "options": ["20 y 10", "25 y 5", "15 y 15", "Imposible"], "correct": 0, "explanation": "Una no es de 20, pero la otra sí; total 30.", "category": "matemática trampa"}, {"id": "common_sense_524", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "Si el lunes pasado fue el día anterior a mi cumpleaños y hoy es jueves, ¿cuándo fue mi cumpleaños?", "options": ["Hoy", "Hace 9 días", "Hace 10 días", "El martes pasado"], "correct": 2, "explanation": "Lunes pasado a hoy jueves son 10 días; cumple fue martes pasado.", "category": "tiempo/calendario"}, {"id": "common_sense_525", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "¿Qué número, dividido entre la mitad y sumándole dos, da diez?", "options": ["4", "6", "3", "8"], "correct": 0, "explanation": "4÷(1/2)=8; 8+2=10. Dividir entre la mitad multiplica por dos.", "category": "matemática trampa"}, {"id": "common_sense_526", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "Hay tres luces apagadas en un cuarto cerrado y tres interruptores fuera. ¿Cuántas veces como mínimo entras al cuarto para saber cuál es cuál?", "options": ["3", "2", "1", "Depende"], "correct": 2, "explanation": "Enciendes uno un rato, lo apagas, enciendes otro y entras: caliente, encendido, frío.", "category": "lateral situacional"}, {"id": "common_sense_528", "module": "common_sense", "difficulty": 4, "rating": 1620, "question": "¿Cuál es el 10% del 50% de 200?", "options": ["100", "10", "20", "50"], "correct": 1, "explanation": "50% de 200 es 100; 10% de 100 es 10.", "category": "matemática trampa"}, {"id": "common_sense_529", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "Si el ayer del mañana es hoy, ¿qué es el mañana del ayer?", "options": ["Mañana", "Hoy", "Ayer", "Pasado mañana"], "correct": 1, "explanation": "Mañana del ayer también es hoy.", "category": "re-lectura"}, {"id": "common_sense_530", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "Un caballo está atado a una cuerda de 5 metros, pero camina hasta una manzana a 10 metros. ¿Cómo?", "options": ["La cuerda se estira", "La cuerda no está atada al otro extremo", "La manzana rueda", "Salta"], "correct": 1, "explanation": "La cuerda no está sujeta a nada; el caballo camina libre.", "category": "asunción oculta"}, {"id": "common_sense_531", "module": "common_sense", "difficulty": 5, "rating": 1760, "question": "Llevo 9 monedas idénticas pero una pesa más. Con una balanza de dos platos, ¿cuántas pesadas mínimas necesito?", "options": ["3", "2", "4", "9"], "correct": 1, "explanation": "Divide en tres grupos de 3; bastan dos pesadas.", "category": "matemática trampa"}, {"id": "common_sense_532", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "¿Qué hay siempre en medio de París?", "options": ["La torre Eiffel", "La letra R", "El Sena", "Un puente"], "correct": 1, "explanation": "La letra R está en el medio de la palabra París.", "category": "re-lectura"}, {"id": "common_sense_533", "module": "common_sense", "difficulty": 4, "rating": 1620, "question": "Si compro tres lápices a 50 céntimos cada uno y me dan dos descuentos del 10%, ¿cuánto pago?", "options": ["1.20", "1.21", "1.35", "1.30"], "correct": 1, "explanation": "1.50 × 0.9 × 0.9 = 1.215, redondeado a 1.21.", "category": "matemática trampa"}, {"id": "common_sense_534", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "En una sala hay 7 velas. El viento apaga 2 y luego apaga otra. ¿Cuántas quedan al final?", "options": ["7", "4", "3", "6"], "correct": 2, "explanation": "Sólo quedan las apagadas; las encendidas se consumen.", "category": "conteo trampa"}, {"id": "common_sense_535", "module": "common_sense", "difficulty": 5, "rating": 1740, "question": "Si una camisa tarda una hora en secarse al sol, ¿cuánto tardan 5 camisas idénticas tendidas a la vez?", "options": ["5 horas", "2 horas", "Una hora", "30 minutos"], "correct": 2, "explanation": "Se secan en paralelo; el tiempo no se suma.", "category": "tasa/proporción"}, {"id": "common_sense_536", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "¿Cuál es el número que sigue: 2, 4, 8, 16, ...?", "options": ["24", "32", "30", "20"], "correct": 1, "explanation": "Cada número se duplica.", "category": "patrón interrumpido"}, {"id": "common_sense_537", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "Si la tercera parte de un número es 12, ¿cuánto es la mitad de ese número?", "options": ["6", "18", "24", "8"], "correct": 1, "explanation": "Número es 36; mitad es 18.", "category": "matemática trampa"}, {"id": "common_sense_538", "module": "common_sense", "difficulty": 5, "rating": 1780, "question": "Una persona muere cada 5 minutos en cierta ciudad. ¿Qué deberían hacer las autoridades?", "options": ["Hospital nuevo", "Más policía", "Nada, es la misma persona", "Vacunar"], "correct": 2, "explanation": "Cada 5 minutos no es lo mismo que cada vez una distinta.", "category": "re-lectura"}, {"id": "common_sense_540", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "¿Qué tienen en común una tortuga, un huevo y un tornillo?", "options": ["Son redondos", "Tienen cubierta dura", "Las palabras tienen una T", "Son lentos"], "correct": 2, "explanation": "Las tres palabras comienzan con T.", "category": "re-lectura"}, {"id": "common_sense_541", "module": "common_sense", "difficulty": 4, "rating": 1620, "question": "Si llueve el día de tu boda, ¿qué probabilidad hay de que haga sol al día siguiente?", "options": ["50%", "No se sabe", "100% si es desierto", "Lo mismo que cualquier otro día"], "correct": 1, "explanation": "No hay relación causal; depende del clima local.", "category": "asunción oculta"}, {"id": "common_sense_542", "module": "common_sense", "difficulty": 5, "rating": 1750, "question": "Tengo una jarra de 5 litros y otra de 3. ¿Cómo mido exactamente 4 litros?", "options": ["Imposible", "Llenar la de 5, pasar a la de 3, vaciar y repetir", "Mitad de la de 5 es 2.5", "Llenar ambas"], "correct": 1, "explanation": "Tras vaciar y rellenar, la de 5 termina con exactamente 4.", "category": "lateral situacional"}, {"id": "common_sense_543", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "Una persona escribe un libro de 200 páginas en 4 días. ¿Cuántas páginas en 6 días al mismo ritmo?", "options": ["300", "250", "400", "Depende del esfuerzo"], "correct": 0, "explanation": "50 páginas/día × 6 = 300.", "category": "tasa/proporción"}, {"id": "common_sense_544", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "Tres hermanos comparten una pizza en partes iguales. Llega el cuarto. ¿Cuánto le toca a cada uno ahora?", "options": ["1/3", "1/4", "1/6", "Depende del hambre"], "correct": 1, "explanation": "Repartida en cuatro, cada uno recibe 1/4.", "category": "familia"}, {"id": "common_sense_545", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "Un coche tarda 2 horas en recorrer 120 km. ¿Cuál es su velocidad media?", "options": ["60 km/h", "100 km/h", "240 km/h", "2 km/h"], "correct": 0, "explanation": "120 ÷ 2 = 60.", "category": "tasa/proporción"}, {"id": "common_sense_546", "module": "common_sense", "difficulty": 5, "rating": 1730, "question": "Si hoy es martes, ¿qué día será dentro de 100 días?", "options": ["Jueves", "Viernes", "Miércoles", "Sábado"], "correct": 0, "explanation": "100 mod 7 = 2; martes + 2 = jueves.", "category": "tiempo/calendario"}, {"id": "common_sense_547", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "¿Qué cosa tiene un hombre en común con un pez aunque no esté en el agua?", "options": ["Espinas", "Branquias", "Una boca", "Sangre"], "correct": 2, "explanation": "Ambos tienen boca; espinas/branquias son sólo del pez.", "category": "re-lectura"}, {"id": "common_sense_548", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "Si hace 10 años yo tenía la mitad de la edad que tendré dentro de 10 años, ¿cuántos años tengo hoy?", "options": ["20", "30", "40", "10"], "correct": 1, "explanation": "x-10 = (x+10)/2; x = 30.", "category": "matemática trampa"}, {"id": "common_sense_550", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "En un grupo de 23 personas, ¿cuál es la probabilidad aproximada de que dos cumplan años el mismo día?", "options": ["6%", "23%", "50%", "100%"], "correct": 2, "explanation": "Es la paradoja del cumpleaños, alrededor de 50%.", "category": "matemática trampa"}, {"id": "common_sense_551", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "Un escalador sube una montaña a 4 km/h y baja a 6 km/h por la misma ruta. ¿Cuál es su velocidad media?", "options": ["5 km/h", "4.8 km/h", "4 km/h", "6 km/h"], "correct": 1, "explanation": "Media armónica: 2(4×6)/(4+6) = 4.8.", "category": "tasa/proporción"}, {"id": "common_sense_553", "module": "common_sense", "difficulty": 5, "rating": 1760, "question": "En 24 horas, ¿cuántas veces coinciden las manecillas de un reloj analógico exactamente?", "options": ["24", "22", "12", "23"], "correct": 1, "explanation": "Coinciden 22 veces en 24 horas (no cada hora).", "category": "tiempo/calendario"}, {"id": "common_sense_554", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "Si toda mañana es como ayer pero al revés, ¿qué día es hoy si ayer fue domingo?", "options": ["Sábado", "Lunes", "Domingo", "Hoy es siempre hoy"], "correct": 3, "explanation": "La pregunta no cambia el hecho de que hoy es hoy.", "category": "auto-referencia"}, {"id": "common_sense_556", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "Si lanzas una moneda al aire y cae 9 veces seguidas cara, ¿qué probabilidad hay de que caiga cruz la décima?", "options": ["Más alta", "Más baja", "50%", "100%"], "correct": 2, "explanation": "Cada lanzamiento es independiente, siempre 50%.", "category": "matemática trampa"}, {"id": "common_sense_558", "module": "common_sense", "difficulty": 4, "rating": 1620, "question": "Si una vaca pesa 600 kg y come 10 kg de pasto al día, ¿cuánto pasto come al año?", "options": ["3650 kg", "3600 kg", "Depende del pasto", "No se puede saber"], "correct": 0, "explanation": "10 kg × 365 días = 3650 kg.", "category": "tasa/proporción"}, {"id": "common_sense_560", "module": "common_sense", "difficulty": 5, "rating": 1800, "question": "Si la palabra silencio se rompe al pronunciarla, ¿qué palabra se rompe al escribirla?", "options": ["Ninguna", "Silencio", "Palabra", "Escribir"], "correct": 1, "explanation": "También silencio: cualquier acto la rompe; trampa de re-lectura.", "category": "auto-respuesta"}, {"id": "common_sense_562", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "¿Qué porcentaje del 100% es el 100%?", "options": ["100%", "50%", "1%", "Depende"], "correct": 0, "explanation": "El total siempre es el 100% de sí mismo.", "category": "re-lectura"}, {"id": "common_sense_564", "module": "common_sense", "difficulty": 5, "rating": 1730, "question": "Hay 5 manzanas en una canasta y 5 personas. Cada persona se lleva una manzana, pero queda una manzana en la canasta. ¿Cómo?", "options": ["No es posible", "La última persona se llevó la canasta con la manzana", "Sobró una", "Una era pera"], "correct": 1, "explanation": "Se llevó la canasta entera con la manzana adentro.", "category": "lateral situacional"}, {"id": "common_sense_566", "module": "common_sense", "difficulty": 4, "rating": 1560, "question": "Mi hermana es 3 años mayor que yo. Hace 2 años yo tenía la mitad de su edad. ¿Cuántos años tengo?", "options": ["3", "5", "4", "6"], "correct": 1, "explanation": "Hace 2 años: x-2 = (x+1)/2; x = 5.", "category": "matemática trampa"}, {"id": "common_sense_567", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "¿Cuál es la siguiente letra: L, M, M, J, V, ...?", "options": ["S", "D", "L", "V"], "correct": 0, "explanation": "Iniciales de los días: Lunes, Martes... Sábado.", "category": "patrón interrumpido"}, {"id": "common_sense_568", "module": "common_sense", "difficulty": 5, "rating": 1750, "question": "En un torneo de tenis con 64 jugadores eliminatorios, ¿cuántos partidos se juegan en total?", "options": ["64", "32", "63", "127"], "correct": 2, "explanation": "Cada partido elimina a uno; necesitas eliminar 63.", "category": "conteo trampa"}, {"id": "common_sense_569", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "Si una persona dice siempre la verdad y otra siempre miente, y le preguntas a una qué diría el otro sobre dónde está la salida, ¿hacia dónde no debes ir?", "options": ["Hacia donde te indica", "Hacia el contrario", "No se puede saber", "Hacia atrás"], "correct": 0, "explanation": "Ambos coincidirán en señalar la dirección incorrecta.", "category": "lateral situacional"}, {"id": "common_sense_570", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "¿Qué número viene antes del 1?", "options": ["0", "-1", "Ninguno", "Depende del contexto"], "correct": 3, "explanation": "En naturales no hay; en enteros es 0; depende del conjunto.", "category": "asunción oculta"}, {"id": "common_sense_571", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "Un cubo tiene 6 caras pintadas y se corta en 27 cubitos. ¿Cuántos cubitos no tienen pintura?", "options": ["1", "8", "6", "27"], "correct": 0, "explanation": "Sólo el cubo central no toca ninguna cara externa.", "category": "conteo trampa"}, {"id": "common_sense_572", "module": "common_sense", "difficulty": 5, "rating": 1760, "question": "Si te doy 100 euros y te quito el 10%, luego te devuelvo el 10%, ¿tienes los mismos 100?", "options": ["Sí", "No, tienes 99", "No, tienes 101", "Sí, exacto"], "correct": 1, "explanation": "100−10=90; 90+9=99; los porcentajes no se cancelan.", "category": "matemática trampa"}, {"id": "common_sense_573", "module": "common_sense", "difficulty": 4, "rating": 1620, "question": "Un dado tiene 6 caras. ¿Cuál es la suma de las caras opuestas siempre?", "options": ["6", "7", "5", "Variable"], "correct": 1, "explanation": "En un dado estándar las caras opuestas suman 7.", "category": "asunción oculta"}, {"id": "common_sense_574", "module": "common_sense", "difficulty": 4, "rating": 1540, "question": "¿Cuántas veces aparece la letra A en la palabra 'matemáticas'?", "options": ["2", "3", "4", "1"], "correct": 1, "explanation": "M-a-t-e-m-á-t-i-c-a-s: tres aes.", "category": "conteo trampa"}, {"id": "common_sense_575", "module": "common_sense", "difficulty": 5, "rating": 1820, "question": "Si la respuesta a esta pregunta es C, ¿cuál es la respuesta correcta?", "options": ["A", "B", "C", "D"], "correct": 2, "explanation": "Auto-referencial: la única consistente es C.", "category": "auto-referencia"}, {"id": "common_sense_576", "module": "common_sense", "difficulty": 4, "rating": 1500, "question": "Dos trenes salen al mismo tiempo, uno hacia el este y otro hacia el oeste, a 50 km/h. ¿A qué distancia están entre sí tras 2 horas?", "options": ["100 km", "50 km", "200 km", "No se puede saber"], "correct": 2, "explanation": "Cada uno recorre 100 km en direcciones opuestas: 200 entre ambos.", "category": "matemática trampa"}, {"id": "common_sense_577", "module": "common_sense", "difficulty": 4, "rating": 1580, "question": "Empiezo el día sin nombre, al final del día tengo uno y al amanecer cambio. ¿Qué soy?", "options": ["Una sombra", "Un día", "Una luz", "Un periódico"], "correct": 1, "explanation": "Cada día tiene un nombre diferente que cambia al amanecer.", "category": "re-lectura"}, {"id": "common_sense_578", "module": "common_sense", "difficulty": 4, "rating": 1600, "question": "En un cuarto entran 5 personas y salen 7. ¿Cuántas hay dentro ahora?", "options": ["−2", "2", "Había gente antes", "Imposible"], "correct": 2, "explanation": "Salieron más de las que entraron: ya había gente.", "category": "re-lectura"}, {"id": "common_sense_579", "module": "common_sense", "difficulty": 5, "rating": 1850, "question": "El padre de Juan tiene 5 hijos: Lalo, Lila, Lolo, Lulo. ¿Cómo se llama el quinto?", "options": ["Lelo", "Juan", "No tiene quinto", "Lolo"], "correct": 1, "explanation": "Es el padre de Juan, así que Juan es el quinto hijo.", "category": "auto-referencia"}];
+
+const STORAGE_KEY = 'klaro_trick_review_v1';
+let reviews = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+function saveReview(qid, field, value) {
+  if (!reviews[qid]) reviews[qid] = {};
+  reviews[qid][field] = value;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+  updateStats();
+  showToast('Guardado');
+  // Update card color
+  const card = document.querySelector(`[data-qid="${qid}"]`);
+  card.classList.remove('approved', 'fix', 'reject');
+  if (reviews[qid].status) card.classList.add(reviews[qid].status.toLowerCase());
+}
+
+function updateStats() {
+  const total = QUESTIONS.length;
+  let approved = 0, fix = 0, reject = 0;
+  for (const r of Object.values(reviews)) {
+    if (r.status === 'APPROVED') approved++;
+    if (r.status === 'FIX') fix++;
+    if (r.status === 'REJECT') reject++;
+  }
+  document.getElementById('total').textContent = total;
+  document.getElementById('cnt-approved').textContent = approved;
+  document.getElementById('cnt-fix').textContent = fix;
+  document.getElementById('cnt-reject').textContent = reject;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1200);
+}
+
+function escapeCSV(val) {
+  if (val == null) return '';
+  const s = String(val);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function downloadCSV() {
+  const headers = ['ID', 'Categoría', 'Dificultad', 'Pregunta', 'Opción A', 'Opción B', 'Opción C', 'Opción D', 'Respuesta correcta', 'Por qué es trampa', 'Status', 'Comentario', 'Sugerencia'];
+  const rows = [headers.map(escapeCSV).join(',')];
+  for (const q of QUESTIONS) {
+    const r = reviews[q.id] || {};
+    const letter = ['A','B','C','D'][q.correct];
+    rows.push([
+      q.id, q.category, q.difficulty, q.question,
+      q.options[0], q.options[1], q.options[2], q.options[3],
+      letter, q.explanation,
+      r.status || '', r.comment || '', r.suggestion || ''
+    ].map(escapeCSV).join(','));
+  }
+  const csv = '\uFEFF' + rows.join('\n');  // BOM for Excel UTF-8
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'klaro_review_preguntas_trampa.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV descargado');
+}
+
+function render() {
+  const container = document.getElementById('questions');
+  container.innerHTML = QUESTIONS.map((q, i) => {
+    const r = reviews[q.id] || {};
+    const stateClass = r.status ? r.status.toLowerCase() : '';
+    return `
+      <div class="q ${stateClass}" data-qid="${q.id}">
+        <div class="q-meta">
+          <span class="tag">#${i+1}</span>
+          <span class="tag id">${q.id}</span>
+          <span class="tag cat">${q.category}</span>
+          <span class="tag diff-${q.difficulty}">Dificultad ${q.difficulty}</span>
+        </div>
+        <h3>${escapeHTML(q.question)}</h3>
+        <ol type="A" class="options">
+          ${q.options.map((opt, j) => `<li class="${j === q.correct ? 'correct' : ''}">${escapeHTML(opt)}</li>`).join('')}
+        </ol>
+        <div class="q-explanation"><strong>Explicación:</strong> ${escapeHTML(q.explanation)}</div>
+        <div class="review-controls">
+          <div class="row">
+            <label for="status-${q.id}">Status</label>
+            <select id="status-${q.id}" onchange="saveReview('${q.id}', 'status', this.value)">
+              <option value="">— Sin revisar —</option>
+              <option value="APPROVED" ${r.status === 'APPROVED' ? 'selected' : ''}>✅ APPROVED</option>
+              <option value="FIX" ${r.status === 'FIX' ? 'selected' : ''}>⚠️ FIX</option>
+              <option value="REJECT" ${r.status === 'REJECT' ? 'selected' : ''}>❌ REJECT</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="comment-${q.id}">Comentario (opcional)</label>
+            <textarea id="comment-${q.id}" placeholder="Qué te gustó / no" onchange="saveReview('${q.id}', 'comment', this.value)">${escapeHTML(r.comment || '')}</textarea>
+          </div>
+          <div class="row">
+            <label for="suggestion-${q.id}">Sugerencia de fix (si marcaste FIX)</label>
+            <textarea id="suggestion-${q.id}" placeholder="Qué cambiar" onchange="saveReview('${q.id}', 'suggestion', this.value)">${escapeHTML(r.suggestion || '')}</textarea>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  updateStats();
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+render();
+</script>
+</body>
+</html>
